@@ -105,7 +105,7 @@ const FolderListLayout = ({
 
       {folderChildren.map((c: OdFolderChildren) => (
         <div
-          className="grid grid-cols-12 transition-all duration-100 hover:bg-gray-100 dark:hover:bg-gray-850"
+          className={c.name=="README.md"?"hidden":"grid grid-cols-12 transition-all duration-100 hover:bg-gray-100 dark:hover:bg-gray-850"}
           key={c.id}
         >
           <Link

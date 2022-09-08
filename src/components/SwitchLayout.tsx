@@ -17,9 +17,9 @@ const SwitchLayout = () => {
   const { t } = useTranslation()
 
   return (
-    <div className="relative w-24 flex-shrink-0 text-sm text-gray-600 dark:text-gray-300 md:w-28">
-      <Listbox value={preferredLayout} onChange={setPreferredLayout}>
-        <Listbox.Button className="relative w-full cursor-pointer rounded pl-4">
+    <div className="relative w-24 flex-shrink-0 text-sm text-gray-600 dark:text-gray-300 md:w-28 z-30">
+      <Listbox value={preferredLayout} onChange={setPreferredLayout} >
+        <Listbox.Button className="relative w-full cursor-pointer rounded pl-2">
           <span className="pointer-events-none flex items-center">
             <FontAwesomeIcon className="mr-2 h-3 w-3" icon={preferredLayout.icon} />
             <span>

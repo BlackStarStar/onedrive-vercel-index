@@ -1,6 +1,6 @@
 import type { OdFileObject } from '../../types'
 
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
 
@@ -19,6 +19,8 @@ import { DownloadBtnContainer, PreviewContainer } from './Containers'
 import FourOhFour from '../FourOhFour'
 import Loading from '../Loading'
 import CustomEmbedLinkMenu from '../CustomEmbedLinkMenu'
+import Artplayer from 'artplayer';
+import artplayerPluginDanmuku from 'artplayer-plugin-danmuku';
 
 import 'plyr-react/plyr.css'
 
@@ -74,6 +76,25 @@ const VideoPlayer: FC<{
   return <Plyr id="plyr" source={plyrSource as Plyr.SourceInfo} options={plyrOptions} />
 }
 
+function ArtPlayer({ option, getInstance, ...rest }) {
+  const artRef = useRef(null);
+  useEffect(() => {
+      const art = new Artplayer({
+          ...option,
+          container: artRef.current,
+      });
+      if (getInstance && typeof getInstance === 'function') {
+          getInstance(art);
+      }
+      return () => {
+          if (art && art.destroy) {
+              art.destroy(false);
+          }
+      };
+  }, []);
+  return <div ref={artRef} {...rest}></div>;
+}
+
 const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
   const { asPath } = useRouter()
   const hashedToken = getStoredToken(asPath)
@@ -87,10 +108,16 @@ const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
 
   // We assume subtitle files are beside the video with the same name, only webvtt '.vtt' files are supported
   const vtt = `${asPath.substring(0, asPath.lastIndexOf('.'))}.vtt`
-  const subtitle = `/api/raw/?path=${vtt}${hashedToken ? `&odpt=${hashedToken}` : ''}`
+  // const xml = `${asPath.substring(0, asPath.lastIndexOf('.'))}.xml`
+  const xml = `${asPath.substring(0, asPath.lastIndexOf('/'))}/弹幕XML${asPath.substring(asPath.lastIndexOf('/'),asPath.lastIndexOf('.'))}.xml`
+  console.log(xml)
 
+  const subtitle = `/api/raw/?path=${xml}${hashedToken ? `&odpt=${hashedToken}` : ''}`
+  const danmuku = `/api/raw/?path=${xml}${hashedToken ? `&odpt=${hashedToken}` : ''}`
   // We also format the raw video file for the in-browser player as well as all other players
   const videoUrl = `/api/raw/?path=${asPath}${hashedToken ? `&odpt=${hashedToken}` : ''}`
+  const isMobile = navigator.userAgent.match(/(iPhone|iPod|Android|ios|iOS|iPad|Backerry|WebOS|Symbian|Windows Phone|Phone)/i)
+
 
   const isFlv = getExtension(file.name) === 'flv'
   const {
@@ -111,7 +138,7 @@ const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
           <FourOhFour errorMsg={error.message} />
         ) : loading && isFlv ? (
           <Loading loadingText={t('Loading FLV extension...')} />
-        ) : (
+        ) : isMobile ?(
           <VideoPlayer
             videoName={file.name}
             videoUrl={videoUrl}
@@ -121,16 +148,87 @@ const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
             subtitle={subtitle}
             isFlv={isFlv}
             mpegts={mpegts}
+          />):
+          (<ArtPlayer
+            container ={'.rounded bg-white p-3 dark:bg-gray-900 dark:text-white 100vh 100vw'}
+            option={{
+              url: videoUrl,
+              pip: true,
+              // autoSize: true,
+              autoMini: true,
+              screenshot: true,
+              setting: true,
+              loop: true,
+              flip: true,
+              playbackRate: true,
+              aspectRatio: true,
+              fullscreen: true,
+              fullscreenWeb: true,
+              subtitleOffset: true,
+              miniProgressBar: true,
+              mutex: true,
+              backdrop: true,
+              playsInline: true,
+              autoPlayback: true,
+              airplay: true,
+              theme: '#23ade5',
+              moreVideoAttr: {
+                crossOrigin: 'anonymous',
+              },
+              plugins: [
+                artplayerPluginDanmuku({
+                    // 弹幕 XML 文件，和 Bilibili 网站的弹幕格式一致
+                    danmuku: danmuku,
+                }),
+              ],
+              
+              // icons: {
+              //   loading: '<img src="/assets/img/ploading.gif">',
+              //   state: '<img width="150" heigth="150" src="/assets/img/state.svg">',
+              //   indicator: '<img width="16" heigth="16" src="/assets/img/indicator.svg">',
+              // },
+              // customType: {
+              //   flv: function (video, url) {
+              //       if (flvjs.isSupported()) {
+              //           const flvPlayer = flvjs.createPlayer({
+              //               type: 'flv',
+              //               url: url,
+              //           });
+              //           flvPlayer.attachMediaElement(video);
+              //           flvPlayer.load();
+              //       } else {
+              //         // art.notice.show = '不支持播放格式：flv';
+              //       }
+              //   },
+              // },
+              }}
+            style={{
+              // margin: '60px auto 0',
+              // width: '968px',
+              height: '545px',
+              // width: 100,
+              // height: 100,
+              theme: '#23ade5',
+          }}
+
+            getInstance={(art) => console.log()}
           />
         )}
       </PreviewContainer>
 
       <DownloadBtnContainer>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-2 z-30">
           <DownloadButton
             onClickCallback={() => window.open(videoUrl)}
             btnColor="blue"
             btnText={t('Download')}
+            btnIcon="file-download"
+          />
+          <DownloadButton
+            // onClickCallback={() => window.open(videoUrl.replace("vg1bh-my.sharepoint.com","pan.xingtong2568.cf"))}
+            onClickCallback={() => fetch(videoUrl).then(res=>window.open(res.url.replace("vg1bh-my.sharepoint.com","pan.xingtong2568.cf")))}
+            btnColor="blue"
+            btnText={t('加/减速下载')}
             btnIcon="file-download"
           />
           <DownloadButton

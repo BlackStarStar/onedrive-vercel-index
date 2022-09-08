@@ -49,7 +49,7 @@ export default function CustomEmbedLinkMenu({
 
   return (
     <Transition appear show={menuOpen} as={Fragment}>
-      <Dialog as="div" className="fixed inset-0 z-10 overflow-y-auto" onClose={closeMenu} initialFocus={focusInputRef}>
+      <Dialog as="div" className="fixed inset-0 z-30 overflow-y-auto " onClose={closeMenu} initialFocus={focusInputRef}>
         <div className="min-h-screen px-4 text-center">
           <Transition.Child
             as={Fragment}
